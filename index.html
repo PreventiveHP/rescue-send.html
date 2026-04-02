@@ -15,7 +15,7 @@
 
     <div class="text-center mb-10 mt-16 flex flex-col items-center">
         <div class="w-24 h-24 mb-6 bg-zinc-900 rounded-full flex items-center justify-center border-4 border-[#ccff00]/20 shadow-lg shadow-[#ccff00]/10 overflow-hidden">
-            <img src="https://i.ibb.co/vz4D824/montcode-logo.png" alt="MontCode Rescue Logo" class="w-16 h-16 object-contain">
+            <img src="logo.png.jpg" alt="MontCode Rescue Logo" class="w-full h-full object-cover">
         </div>
         
         <h1 id="title" class="text-[#ccff00] text-3xl font-black italic tracking-tighter uppercase">RESCUE SEND</h1>
@@ -34,7 +34,6 @@
     <script>
         let currentLang = 'en';
 
-        // Base de datos de traducciones
         const translations = {
             en: {
                 title: "RESCUE SEND",
@@ -56,16 +55,12 @@
             }
         };
 
-        // Función para cambiar de idioma
         function setLanguage(lang) {
             currentLang = lang;
-            
-            // Actualizar textos en pantalla
             document.getElementById('title').innerText = translations[lang].title;
             document.getElementById('tap-text').innerText = translations[lang].tap;
             document.getElementById('sub-text').innerText = translations[lang].sub;
             
-            // Efecto visual en las banderas
             const btnEn = document.getElementById('btn-en');
             const btnEs = document.getElementById('btn-es');
             
@@ -82,45 +77,34 @@
             }
         }
 
-        // Función principal de envío de emergencia
         async function triggerRescue() {
             const status = document.getElementById('status-text');
-            const patientName = "MANUEL MONTALVAN"; // Cambiar por el nombre real del paciente
+            const patientName = "MANUEL MONTALVAN";
 
-            // 1. Estado visual de "Enviando"
             status.innerText = translations[currentLang].transmitting;
             status.className = "text-yellow-500 font-bold text-[10px] animate-pulse uppercase tracking-widest";
 
             try {
-                // 2. Transmisión de datos a la API de Vercel
-                // El fetch busca la carpeta /api que ya creaste en Vercel
                 const response = await fetch('/api/pusher-relay', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        sys: 911, // Código de emergencia interno
+                        sys: 911,
                         dia: 0, 
                         patient: patientName, 
-                        provider: translations[currentLang].msg // Mensaje dinámico bilingüe
+                        provider: translations[currentLang].msg 
                     })
                 });
 
                 if(response.ok) {
-                    // 3. Estado visual de "Éxito"
                     status.innerText = translations[currentLang].sent;
                     status.className = "text-[#ccff00] font-bold text-[10px] uppercase tracking-widest";
-                    
-                    // Vibración táctica de confirmación (SOS corto)
-                    if(navigator.vibrate) {
-                        navigator.vibrate([100, 50, 100, 50, 100, 300]);
-                    }
+                    if(navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 100, 300]);
                 } else {
-                    // 4. Estado visual de "Error de API"
                     status.innerText = "API ERROR: " + response.status;
                     status.className = "text-red-500 font-bold text-[10px] uppercase tracking-widest";
                 }
             } catch (e) {
-                // 5. Estado visual de "Sin Conexión"
                 status.innerText = translations[currentLang].offline;
                 status.className = "text-red-600 font-bold text-[10px] uppercase tracking-widest";
             }
