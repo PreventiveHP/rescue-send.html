@@ -1,4 +1,4 @@
-const Pusher = require("pusher");
+ const Pusher = require("pusher");
 
 const pusher = new Pusher({
   appId: "2136238",
@@ -10,12 +10,26 @@ const pusher = new Pusher({
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
-    const { sys, dia, patient, provider } = req.body;
+    // Extraemos channel_id (el ID único) y location (GPS) del cuerpo de la petición
+    const { sys, dia, patient, provider, channel_id, location } = req.body;
+
     try {
-        await pusher.trigger("montcode-rescue", "new-reading", {
-            sys, dia, patient, provider
+        // Determinamos el nombre del canal. 
+        // Si por alguna razón no viene el ID, usamos el genérico por seguridad.
+        const targetChannel = channel_id ? `rescue-${channel_id}` : "montcode-rescue";
+
+        await pusher.trigger(targetChannel, "new-reading", {
+            sys, 
+            dia, 
+            patient, 
+            provider,
+            location: location || "No GPS Data"
         });
-        res.status(200).json({ sent: true });
+
+        res.status(200).json({ 
+            sent: true, 
+            channel: targetChannel 
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
