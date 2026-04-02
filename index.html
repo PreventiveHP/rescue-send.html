@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MontCode™ Rescue Send</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -10,46 +10,57 @@
     
     <div class="text-center mb-10">
         <h1 class="text-[#ccff00] text-3xl font-black italic tracking-tighter">RESCUE SEND</h1>
-        <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Tactical Transmitter</p>
+        <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Tactical Transmitter v5.7</p>
     </div>
 
-    <button onclick="triggerRescue()" class="w-full max-w-xs bg-red-600 hover:bg-red-700 text-white font-black py-10 rounded-[40px] shadow-2xl shadow-red-900/40 active:scale-95 transition-all text-xl italic uppercase">
-        Send Rescue Signal
+    <button onclick="triggerRescue()" class="w-64 h-64 bg-red-600 hover:bg-red-700 text-white font-black rounded-full border-[10px] border-red-900/30 shadow-[0_0_50px_rgba(220,38,38,0.4)] active:scale-90 transition-all flex flex-col items-center justify-center group">
+        <span class="text-5xl italic uppercase">TAP</span>
+        <span class="text-[10px] opacity-70 mt-2 uppercase tracking-[0.2em]">To Call Help</span>
     </button>
 
-    <div id="status-box" class="mt-8 p-4 rounded-2xl bg-zinc-900 border border-zinc-800 w-full max-w-xs text-center">
+    <div id="status-box" class="mt-12 p-4 rounded-2xl bg-zinc-900 border border-zinc-800 w-full max-w-xs text-center">
         <p id="status-text" class="text-zinc-500 font-bold text-xs uppercase tracking-widest">System Ready</p>
     </div>
 
     <script>
         async function triggerRescue() {
             const status = document.getElementById('status-text');
-            status.innerText = "TRANSMITTING...";
+            
+            // Texto real que recibirá el familiar
+            const emergencyMessage = "I NEED HELP - CALL 911 IMMEDIATELY";
+            const patientName = "MANUEL MONTALVAN";
+
+            status.innerText = "TRANSMITTING TO FAMILY...";
             status.className = "text-yellow-500 font-bold text-xs animate-pulse";
 
             try {
+                // El fetch busca la carpeta /api que ya creaste en Vercel
                 const response = await fetch('/api/pusher-relay', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        sys: 911, 
-                        dia: 77, 
-                        patient: "Manuel Montalvan (RESCUE)", 
-                        provider: "FAMILIA-EMERGENCY" 
+                        sys: 911, // Código de emergencia
+                        dia: 0, 
+                        patient: patientName, 
+                        provider: emergencyMessage // Este es el texto real que viajará
                     })
                 });
 
                 if(response.ok) {
-                    status.innerText = "SENT SUCCESSFULLY ✅";
+                    status.innerText = "SIGNAL DELIVERED ✅";
                     status.className = "text-[#ccff00] font-bold text-xs uppercase";
-                    if(navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 500]);
+                    
+                    // Vibración táctica (SOS)
+                    if(navigator.vibrate) {
+                        navigator.vibrate([100, 50, 100, 50, 100, 300]);
+                    }
                 } else {
-                    status.innerText = "ERROR: " + response.status;
+                    status.innerText = "API ERROR: " + response.status;
                     status.className = "text-red-500 font-bold text-xs uppercase";
                 }
             } catch (e) {
-                status.innerText = "FAILED TO REACH API";
-                status.className = "text-red-500 font-bold text-xs uppercase";
+                status.innerText = "CONNECTION FAILED";
+                status.className = "text-red-600 font-bold text-xs uppercase";
             }
         }
     </script>
