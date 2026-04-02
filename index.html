@@ -9,17 +9,17 @@
 </head>
 <body class="bg-black text-white flex flex-col items-center justify-center min-h-screen p-6 font-sans relative">
 
-    <div id="setup-screen" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center p-6 text-center">
+    <div id="setup-screen" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center p-6 text-center transition-opacity duration-500">
         <div class="w-20 h-20 mb-6 bg-zinc-900 rounded-full flex items-center justify-center border-2 border-zinc-800 overflow-hidden">
             <img src="logo.png.jpg" alt="Logo" class="w-full h-full object-cover">
         </div>
-        <h2 class="text-[#ccff00] font-black italic text-xl mb-2 tracking-tighter">CONFIGURACIÓN TÁCTICA</h2>
-        <p class="text-zinc-500 text-[10px] mb-8 tracking-[0.3em] uppercase">Escanee para vincular monitor</p>
+        <h2 class="text-[#ccff00] font-black italic text-xl mb-2 tracking-tighter uppercase">Configuración Táctica</h2>
+        <p class="text-zinc-500 text-[10px] mb-8 tracking-[0.3em] uppercase">Escanee para vincular monitor familiar</p>
         
         <div id="qrcode-container" class="bg-white p-4 rounded-2xl mb-8 shadow-[0_0_30px_rgba(255,255,255,0.1)]"></div>
         
         <div class="mb-10">
-            <p class="text-zinc-600 text-[10px] uppercase font-bold mb-1">Device ID:</p>
+            <p class="text-zinc-600 text-[10px] uppercase font-bold mb-1">Tu ID Único:</p>
             <p id="display-id" class="text-[#ccff00] font-mono text-xl font-bold tracking-widest bg-zinc-900 px-6 py-2 rounded-lg border border-zinc-800 italic">--</p>
         </div>
         
@@ -54,18 +54,18 @@
     <script>
         let currentLang = 'en';
 
-        // --- LÓGICA DE IDENTIDAD ÚNICA ---
+        // 1. LÓGICA DE IDENTIDAD ÚNICA (PERSISTENTE)
         const patientID = localStorage.getItem('montcode_device_id') || 
                          'MC-' + Math.random().toString(36).substr(2, 6).toUpperCase();
         
         localStorage.setItem('montcode_device_id', patientID);
         document.getElementById('display-id').innerText = patientID;
-        document.getElementById('small-id-display').innerText = "ID: " + patientID;
+        document.getElementById('small-id-display').innerText = "DEVICE ID: " + patientID;
 
-        // Generar QR al cargar
+        // 2. GENERAR QR DINÁMICO AL CARGAR
         window.onload = () => {
             new QRCode(document.getElementById("qrcode-container"), {
-                text: patientID,
+                text: patientID, // El QR contiene solo tu ID único
                 width: 180,
                 height: 180,
                 colorDark: "#000000",
@@ -75,19 +75,18 @@
         };
 
         function closeSetup() {
-            document.getElementById('setup-screen').classList.add('opacity-0');
-            setTimeout(() => {
-                document.getElementById('setup-screen').classList.add('hidden');
-            }, 300);
+            const screen = document.getElementById('setup-screen');
+            screen.style.opacity = '0';
+            setTimeout(() => screen.classList.add('hidden'), 500);
         }
 
-        // --- LÓGICA DE IDIOMA Y ENVÍO ---
+        // 3. TRADUCCIONES
         const translations = {
             en: {
                 title: "RESCUE SEND",
                 tap: "TAP",
                 sub: "To Call Help",
-                transmitting: "TRANSMITTING...",
+                transmitting: "TRANSMITTING GPS...",
                 sent: "SIGNAL DELIVERED ✅",
                 msg: "I NEED HELP - CALL 911 IMMEDIATELY",
                 offline: "CONNECTION FAILED"
@@ -96,7 +95,7 @@
                 title: "ENVÍO RESCATE",
                 tap: "TOCAR",
                 sub: "Pedir Ayuda",
-                transmitting: "TRANSMITIENDO...",
+                transmitting: "TRANSMITIENDO GPS...",
                 sent: "SEÑAL ENTREGADA ✅",
                 msg: "NECESITO AYUDA - LLAME AL 911 DE INMEDIATO",
                 offline: "SIN CONEXIÓN"
@@ -109,22 +108,11 @@
             document.getElementById('tap-text').innerText = translations[lang].tap;
             document.getElementById('sub-text').innerText = translations[lang].sub;
             
-            const btnEn = document.getElementById('btn-en');
-            const btnEs = document.getElementById('btn-es');
-            
-            if (lang === 'en') {
-                btnEn.classList.remove('grayscale', 'opacity-50');
-                btnEn.classList.add('scale-110');
-                btnEs.classList.add('grayscale', 'opacity-50');
-                btnEs.classList.remove('scale-110');
-            } else {
-                btnEs.classList.remove('grayscale', 'opacity-50');
-                btnEs.classList.add('scale-110');
-                btnEn.classList.add('grayscale', 'opacity-50');
-                btnEn.classList.remove('scale-110');
-            }
+            document.getElementById('btn-en').classList.toggle('grayscale', lang !== 'en');
+            document.getElementById('btn-es').classList.toggle('grayscale', lang !== 'es');
         }
 
+        // 4. DISPARO DE EMERGENCIA + GPS
         async function triggerRescue() {
             const status = document.getElementById('status-text');
             const patientName = "MANUEL MONTALVAN";
@@ -132,30 +120,43 @@
             status.innerText = translations[currentLang].transmitting;
             status.className = "text-yellow-500 font-bold text-[10px] animate-pulse uppercase tracking-widest";
 
-            try {
-                // Notar que ahora enviamos 'channel_id' para que la API sepa a quién avisar
-                const response = await fetch('/api/pusher-relay', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        sys: 911,
-                        channel_id: patientID, // <--- ID ÚNICO
-                        patient: patientName, 
-                        provider: translations[currentLang].msg 
-                    })
-                });
+            // Obtener coordenadas antes de enviar
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => sendToRelay(`${pos.coords.latitude},${pos.coords.longitude}`),
+                    () => sendToRelay("No GPS Data"),
+                    { timeout: 5000 }
+                );
+            } else {
+                sendToRelay("No GPS Data");
+            }
 
-                if(response.ok) {
-                    status.innerText = translations[currentLang].sent;
-                    status.className = "text-[#ccff00] font-bold text-[10px] uppercase tracking-widest";
-                    if(navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 100, 300]);
-                } else {
-                    status.innerText = "API ERROR: " + response.status;
-                    status.className = "text-red-500 font-bold text-[10px] uppercase tracking-widest";
+            async function sendToRelay(coords) {
+                try {
+                    const response = await fetch('/api/pusher-relay', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            sys: 911,
+                            channel_id: patientID, // Canal Único dinámico
+                            patient: patientName, 
+                            provider: translations[currentLang].msg,
+                            location: coords
+                        })
+                    });
+
+                    if(response.ok) {
+                        status.innerText = translations[currentLang].sent;
+                        status.className = "text-[#ccff00] font-bold text-[10px] uppercase tracking-widest";
+                        if(navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 100, 300]);
+                    } else {
+                        status.innerText = "API ERROR: " + response.status;
+                        status.className = "text-red-500 font-bold text-[10px] uppercase tracking-widest";
+                    }
+                } catch (e) {
+                    status.innerText = translations[currentLang].offline;
+                    status.className = "text-red-600 font-bold text-[10px] uppercase tracking-widest";
                 }
-            } catch (e) {
-                status.innerText = translations[currentLang].offline;
-                status.className = "text-red-600 font-bold text-[10px] uppercase tracking-widest";
             }
         }
     </script>
