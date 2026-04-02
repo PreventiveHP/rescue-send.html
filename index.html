@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MontCode™ Rescue Send</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-black text-white flex flex-col items-center justify-center min-h-screen p-6">
+    
+    <div class="text-center mb-10">
+        <h1 class="text-[#ccff00] text-3xl font-black italic tracking-tighter">RESCUE SEND</h1>
+        <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Tactical Transmitter</p>
+    </div>
+
+    <button onclick="triggerRescue()" class="w-full max-w-xs bg-red-600 hover:bg-red-700 text-white font-black py-10 rounded-[40px] shadow-2xl shadow-red-900/40 active:scale-95 transition-all text-xl italic uppercase">
+        Send Rescue Signal
+    </button>
+
+    <div id="status-box" class="mt-8 p-4 rounded-2xl bg-zinc-900 border border-zinc-800 w-full max-w-xs text-center">
+        <p id="status-text" class="text-zinc-500 font-bold text-xs uppercase tracking-widest">System Ready</p>
+    </div>
+
+    <script>
+        async function triggerRescue() {
+            const status = document.getElementById('status-text');
+            status.innerText = "TRANSMITTING...";
+            status.className = "text-yellow-500 font-bold text-xs animate-pulse";
+
+            try {
+                const response = await fetch('/api/pusher-relay', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        sys: 911, 
+                        dia: 77, 
+                        patient: "Manuel Montalvan (RESCUE)", 
+                        provider: "FAMILIA-EMERGENCY" 
+                    })
+                });
+
+                if(response.ok) {
+                    status.innerText = "SENT SUCCESSFULLY ✅";
+                    status.className = "text-[#ccff00] font-bold text-xs uppercase";
+                    if(navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 500]);
+                } else {
+                    status.innerText = "ERROR: " + response.status;
+                    status.className = "text-red-500 font-bold text-xs uppercase";
+                }
+            } catch (e) {
+                status.innerText = "FAILED TO REACH API";
+                status.className = "text-red-500 font-bold text-xs uppercase";
+            }
+        }
+    </script>
+</body>
+</html>
