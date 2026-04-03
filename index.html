@@ -13,8 +13,8 @@
         <div class="w-16 h-16 mt-8 mb-4 bg-zinc-900 rounded-full flex items-center justify-center border-2 border-zinc-800 overflow-hidden">
             <img src="logo.png.jpg" alt="Logo" class="w-full h-full object-cover">
         </div>
-        <h2 class="text-[#ccff00] font-black italic text-xl mb-1 tracking-tighter uppercase">Configuración Táctica</h2>
-        <p class="text-zinc-500 text-[9px] mb-6 tracking-[0.3em] uppercase italic">Escanee para vincular monitor familiar</p>
+        <h2 id="setup-title" class="text-[#ccff00] font-black italic text-xl mb-1 tracking-tighter uppercase">Tactical Setup</h2>
+        <p id="setup-sub" class="text-zinc-500 text-[9px] mb-6 tracking-[0.3em] uppercase italic">Scan to link family monitor</p>
         
         <div class="bg-white p-3 rounded-2xl mb-4 shadow-[0_0_30px_rgba(255,255,255,0.05)] inline-block">
             <div id="qrcode-container"></div>
@@ -25,20 +25,20 @@
         </div>
 
         <div class="w-full max-w-xs bg-zinc-900/50 p-5 rounded-3xl border border-zinc-800 mb-8">
-            <h3 class="text-white text-[10px] font-black uppercase tracking-widest mb-4 flex items-center gap-2">
-                <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span> Contacto de Rescate (SMS)
+            <h3 id="contact-header" class="text-white text-[10px] font-black uppercase tracking-widest mb-4 flex items-center justify-center gap-2">
+                <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span> Rescue Contact (SMS)
             </h3>
-            <input type="text" id="contact-name" placeholder="Nombre (ej: Hija)" 
+            <input type="text" id="contact-name" placeholder="Name (e.g. Daughter)" 
                    class="w-full bg-black border border-zinc-800 p-3 rounded-xl mb-2 text-white text-sm focus:border-[#ccff00] outline-none">
-            <input type="tel" id="contact-phone" placeholder="Número (ej: +123456789)" 
+            <input type="tel" id="contact-phone" placeholder="Phone (e.g. +1...)" 
                    class="w-full bg-black border border-zinc-800 p-3 rounded-xl mb-4 text-white text-sm focus:border-[#ccff00] outline-none">
-            <button onclick="saveContact()" class="w-full bg-zinc-800 text-white py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-zinc-700 transition-colors">
-                Guardar Contacto
+            <button id="save-btn" onclick="saveContact()" class="w-full bg-zinc-800 text-white py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-zinc-700 transition-colors">
+                Save Contact
             </button>
         </div>
         
-        <button onclick="closeSetup()" class="bg-[#ccff00] text-black px-12 py-4 rounded-full font-black text-sm uppercase tracking-tighter active:scale-95 transition-all shadow-lg shadow-[#ccff00]/20 mb-8">
-            ENTRAR AL SISTEMA
+        <button id="enter-btn" onclick="closeSetup()" class="bg-[#ccff00] text-black px-12 py-4 rounded-full font-black text-sm uppercase tracking-tighter active:scale-95 transition-all shadow-lg shadow-[#ccff00]/20 mb-8">
+            Enter System
         </button>
     </div>
 
@@ -63,14 +63,13 @@
     </button>
 
     <div id="status-box" class="mt-12 p-4 rounded-2xl bg-zinc-900 border border-zinc-800 w-full max-w-xs text-center">
-        <p id="status-text" class="text-zinc-500 font-bold text-[10px] uppercase tracking-widest">System Ready / Sistema Listo</p>
+        <p id="status-text" class="text-zinc-500 font-bold text-[10px] uppercase tracking-widest">System Ready</p>
     </div>
 
     <script>
         let currentLang = 'en';
         let lastCoords = "No GPS Data";
 
-        // 1. IDENTIDAD Y CONTACTOS
         const patientID = localStorage.getItem('montcode_device_id') || 
                          'MC-' + Math.random().toString(36).substr(2, 6).toUpperCase();
         
@@ -78,7 +77,6 @@
         document.getElementById('display-id').innerText = patientID;
         document.getElementById('small-id-display').innerText = "DEVICE ID: " + patientID;
 
-        // Cargar contacto guardado si existe
         window.onload = () => {
             const savedContact = JSON.parse(localStorage.getItem('emergency_contact'));
             if(savedContact) {
@@ -96,14 +94,56 @@
             });
         };
 
+        const translations = {
+            en: {
+                setupTitle: "Tactical Setup", setupSub: "Scan to link family monitor",
+                contactHeader: "Rescue Contact (SMS)", saveBtn: "Save Contact",
+                enterBtn: "Enter System", title: "RESCUE SEND", tap: "TAP", 
+                sub: "To Call Help", ready: "System Ready",
+                transmitting: "TRANSMITTING GPS...", sent: "SIGNAL DELIVERED ✅",
+                msg: "I NEED HELP - CALL 911 IMMEDIATELY", offline: "CONNECTION FAILED",
+                alertSaved: "Contact Saved", alertFill: "Please fill all fields"
+            },
+            es: {
+                setupTitle: "Configuración Táctica", setupSub: "Escanee para vincular monitor",
+                contactHeader: "Contacto de Rescate (SMS)", saveBtn: "Guardar Contacto",
+                enterBtn: "Entrar al Sistema", title: "ENVÍO RESCATE", tap: "TOCAR", 
+                sub: "Pedir Ayuda", ready: "Sistema Listo",
+                transmitting: "TRANSMITIENDO GPS...", sent: "SEÑAL ENTREGADA ✅",
+                msg: "NECESITO AYUDA - LLAME AL 911 DE INMEDIATO", offline: "SIN CONEXIÓN",
+                alertSaved: "Contacto Guardado", alertFill: "Complete los campos"
+            }
+        };
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            const t = translations[lang];
+            
+            // UI principal
+            document.getElementById('title').innerText = t.title;
+            document.getElementById('tap-text').innerText = t.tap;
+            document.getElementById('sub-text').innerText = t.sub;
+            document.getElementById('status-text').innerText = t.ready;
+
+            // UI Configuración
+            document.getElementById('setup-title').innerText = t.setupTitle;
+            document.getElementById('setup-sub').innerText = t.setupSub;
+            document.getElementById('contact-header').innerText = t.contactHeader;
+            document.getElementById('save-btn').innerText = t.saveBtn;
+            document.getElementById('enter-btn').innerText = t.enterBtn;
+
+            document.getElementById('btn-en').classList.toggle('grayscale', lang !== 'en');
+            document.getElementById('btn-es').classList.toggle('grayscale', lang !== 'es');
+        }
+
         function saveContact() {
             const name = document.getElementById('contact-name').value;
             const phone = document.getElementById('contact-phone').value;
             if(name && phone) {
                 localStorage.setItem('emergency_contact', JSON.stringify({name, phone}));
-                alert(currentLang === 'es' ? "Contacto Guardado" : "Contact Saved");
+                alert(translations[currentLang].alertSaved);
             } else {
-                alert(currentLang === 'es' ? "Complete los campos" : "Please fill all fields");
+                alert(translations[currentLang].alertFill);
             }
         }
 
@@ -113,33 +153,9 @@
             setTimeout(() => screen.classList.add('hidden'), 500);
         }
 
-        // 2. TRADUCCIONES
-        const translations = {
-            en: {
-                title: "RESCUE SEND", tap: "TAP", sub: "To Call Help",
-                transmitting: "TRANSMITTING GPS...", sent: "SIGNAL DELIVERED ✅",
-                msg: "I NEED HELP - CALL 911 IMMEDIATELY", offline: "CONNECTION FAILED"
-            },
-            es: {
-                title: "ENVÍO RESCATE", tap: "TOCAR", sub: "Pedir Ayuda",
-                transmitting: "TRANSMITIENDO GPS...", sent: "SEÑAL ENTREGADA ✅",
-                msg: "NECESITO AYUDA - LLAME AL 911 DE INMEDIATO", offline: "SIN CONEXIÓN"
-            }
-        };
-
-        function setLanguage(lang) {
-            currentLang = lang;
-            document.getElementById('title').innerText = translations[lang].title;
-            document.getElementById('tap-text').innerText = translations[lang].tap;
-            document.getElementById('sub-text').innerText = translations[lang].sub;
-            document.getElementById('btn-en').classList.toggle('grayscale', lang !== 'en');
-            document.getElementById('btn-es').classList.toggle('grayscale', lang !== 'es');
-        }
-
-        // 3. DISPARO DE EMERGENCIA
         async function triggerRescue() {
             const status = document.getElementById('status-text');
-            const patientName = "MANUEL MONTALVAN"; // Cambiar por variable dinámica si se desea
+            const patientName = "MANUEL MONTALVAN"; 
 
             status.innerText = translations[currentLang].transmitting;
             status.className = "text-yellow-500 font-bold text-[10px] animate-pulse uppercase tracking-widest";
@@ -160,21 +176,16 @@
 
         async function executeAlert(coords, name) {
             const status = document.getElementById('status-text');
-            
-            // A. Envío Digital (Pusher)
             try {
                 const response = await fetch('/api/pusher-relay', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        sys: 911,
-                        channel_id: patientID,
-                        patient: name, 
-                        provider: translations[currentLang].msg,
+                        sys: 911, channel_id: patientID,
+                        patient: name, provider: translations[currentLang].msg,
                         location: coords
                     })
                 });
-
                 if(response.ok) {
                     status.innerText = translations[currentLang].sent;
                     status.className = "text-[#ccff00] font-bold text-[10px] uppercase tracking-widest";
@@ -184,13 +195,10 @@
                 status.innerText = translations[currentLang].offline;
             }
 
-            // B. Envío por SMS (Gatillo de Respaldo)
             const contact = JSON.parse(localStorage.getItem('emergency_contact'));
             if(contact) {
                 const mapLink = coords !== "No GPS Data" ? ` https://maps.google.com/?q=${coords}` : "";
-                const smsBody = `${translations[currentLang].msg}. Soy ${name}.${mapLink}`;
-                
-                // Pequeña espera para que el usuario vea el éxito en pantalla antes de saltar a SMS
+                const smsBody = `${translations[currentLang].msg}. I am ${name}.${mapLink}`;
                 setTimeout(() => {
                     window.location.href = `sms:${contact.phone}?body=${encodeURIComponent(smsBody)}`;
                 }, 1500);
